@@ -8,9 +8,9 @@ Created on Thu Dec 26 15:04:34 2024
 
 
 import numpy as np
-from .cnumba import cnjit
-from .constants import UAS2RAD, AS2RAD
-import cnav.iersch5 as iersch5
+from cnumba import cnjit
+from constants import UAS2RAD, AS2RAD
+import iersch5
 
 # Silence numba dot product warning if arrays are not contiguous
 from numba.core.errors import NumbaPerformanceWarning
@@ -18,12 +18,18 @@ import warnings
 warnings.simplefilter('ignore', category=NumbaPerformanceWarning)
 
 
+# =============================================================================
+# Data for the IAU2006 transformations, following Capitaine & Wallace.
+# =============================================================================
+
 # For evaluating 4th and 5th degree polynomials
 powers_4 = np.array([0, 1, 2, 3, 4])
 powers_5 = np.array([0, 1, 2, 3, 4, 5])
 
 
-#  Coefficients from nutation theory, consistent with IAU2006.
+# Coefficients from nutation theory, consistent with IAU2006.
+# See USNO Circular https://aa.usno.navy.mil/downloads/Circular_179.pdf
+# and IERS convention 2010, ch.5.
 planets    = [[908103.259872,  538101628.688982],
               [655127.283060,  210664136.433548],
               [361679.244588,  129597742.283429],
@@ -42,16 +48,23 @@ luni_solar = [[485868.249036, 1717915923.2178, 31.8792,  0.051635, -0.00024470],
 
 # Fukushima-Williams coefficients for gamma and phi consistent with IAU2006.
 # For equinox based transforms.
+# IERS Conventions (2010) in Table 5.2e
+# Capitaine, N., Wallace, P.T., & Chapront, J. (2003)
 PFW_poly_5 = [[   -0.052928,   10.556378,  0.4932044, -0.00031238, -0.000002788,  0.0000000260],
               [84381.412819,  -46.811016,  0.0511268,  0.00053289, -0.000000440, -0.0000000176]]
 
 PFW_poly_5 = np.array(PFW_poly_5, dtype = np.double).T
+
 
 # Rearrange for calculating the arguments of the IERS2006 non-polynomial part
 arg_1_5  = np.array(luni_solar, dtype = np.double).T
 arg_6_13 = np.array(planets, dtype = np.double).T
 arg_14   = np.array(p_a, dtype = np.double).T
 
+
+# =============================================================================
+# Private functions and classes
+# =============================================================================
 
 @cnjit(signature_or_function='f8[:](f8)' , cache=True)
 def Phi(tjc):
@@ -105,12 +118,15 @@ class XYs06a:
         return result
 
 
-X     = XYs06a(iersch5.X_polynomial_5,     iersch5.X)
-Y     = XYs06a(iersch5.Y_polynomial_5,     iersch5.Y)
-spXY2 = XYs06a(iersch5.spXY2_polynomial_5, iersch5.spXY2)
+# Instantiate helper classes
+X           = XYs06a(iersch5.X_polynomial_5,     iersch5.X)
+Y           = XYs06a(iersch5.Y_polynomial_5,     iersch5.Y)
+spXY2       = XYs06a(iersch5.spXY2_polynomial_5, iersch5.spXY2)
 
 
-""" These are the functions provided: """
+# =============================================================================
+# Functions provided by this module
+# =============================================================================
 
 def XYs06(tjc):
     """
@@ -138,6 +154,7 @@ def XYs06(tjc):
     result *= UAS2RAD
     result[2] = result[2] - (result[0] * result[1]) / 2  # s = spXY2 - XY/2
     return result
+
 
 def PFW06_gamma_phi(tjc):
     """

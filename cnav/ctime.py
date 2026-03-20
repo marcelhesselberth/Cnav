@@ -13,7 +13,7 @@ import numpy as np
 from webdata import leapseconds, finals
 from caltools import JD, MJD, RJD, RMJD, JD2000, MJD0, TJC
 from caltools import mdays, wdays, timescales, is_leap_year
-from ttmtdb.ttmtdb import TTmTDB
+from ttmtdb import TTmTDB
 
 
 TTmTAI = 32.184  # Seconds between TT and TAI time scale

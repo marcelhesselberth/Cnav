@@ -95,6 +95,18 @@ class URL_data:
 
     def decode(self, txt):
         pass
+    
+    
+    def reload(self):
+        try:
+            self.download()
+            file = open(self.path, self.readmode)
+            data = file.read()
+            file.close()
+        except:
+            raise IOError(f"Failed to download {self.url}")
+        else:
+            self.decode(data)        
 
 
     def __str__(self):

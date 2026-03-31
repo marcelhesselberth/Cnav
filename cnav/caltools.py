@@ -203,7 +203,7 @@ def RMJD(mjd):
 
 def TJC(tt, tt2=0.0):
     """
-    Julian centuries since JD2000. Ised in IERS transform.
+    Julian centuries since JD2000. Used in IERS transform.
 
 
     Parameters

@@ -6,7 +6,6 @@ Created on Wed Mar 25 20:00:22 2026
 @author: Marcel Hesselberth
 """
 
-from greek import *
 import pandas as pd
 import numpy as np
 import re
@@ -225,7 +224,7 @@ class StarDB:
     Properly handles cases where Bayer names like "Alp Cen" point to ProperName "Rigil Kentaurus".
     """
 
-    def __init__(self, filename: str = "stars.csv", reference_jd: float = 2451545.0):
+    def __init__(self, filename: str = "stars.csv", reference_jd: float = 2448349.0625):
         self.df = load_star_csv(filename)
 
         # Clean columns
@@ -361,7 +360,7 @@ if __name__ == "__main__":
     print(sirius)                                # Star(Sirius, α CMa)
     
     # Single star position at a specific date
-    pos = sirius.get_position(2460000.0)         # numpy array (3,)
+    pos = sirius.get_position(2460310.500800741)         # numpy array (3,)
     print(pos)
     
     # Batch for your pipeline (returns (N,3) array ready for numpy processing)
@@ -378,3 +377,62 @@ if __name__ == "__main__":
     print("rigil kent* →",   [s.proper_name for s in db.search("rigil kent*")])
     print("al? cen* →",      [s.proper_name for s in db.search("al? cen*")])
     print("vega →",          [s.proper_name for s in db.search("vega")])
+    
+
+from skyfield.api import load
+ts = load.timescale()
+t = ts.utc(2024, 1, 1)
+
+eph = load('de421.bsp')
+earth = eph['earth']
+sun = eph['sun']
+
+sirius = db.get_star("sirius")
+pos = sirius.get_position(t.tt)  - earth.at(t).position.au       # numpy array (3,)
+print(pos)
+
+from skyfield.api import Star, load
+from skyfield.data import hipparcos
+
+# 1. Setup omgeving
+
+
+
+# 2. Laad Sirius uit de Hipparcos database
+with load.open(hipparcos.URL) as f:
+    df = hipparcos.load_dataframe(f)
+
+# Sirius is HIP 32349
+sirius_data = df.loc[32349]
+sirius = Star.from_dataframe(sirius_data)
+
+# 3. Bereken de positie voor een specifiek tijdstip (bijv. J2000 of nu)
+# Skyfield corrigeert automatisch voor de tijd tussen Epoch 1991.25 en 't'
+print(t.tt)
+astrometric = earth.at(t).observe(sirius)
+
+# 4. Resultaten
+ra, dec, distance = astrometric.radec()
+
+# Gebruik de standaard Skyfield formattering (zonder de format-parameter)
+
+from skyfield.constants import AU_KM
+
+# 2. Gebruik de interne _at() methode van de ster zelf
+# Dit berekent de ICRS positie (t.o.v. SSB) op exact tijdstip t
+# inclusief eigenbeweging vanaf 1991.25, maar ZONDER lichttijd.
+p_star, v_star, _, _ = sirius._at(t)
+star_pos_ssb = p_star / AU_KM  # Omzetten van km naar AU
+
+# 3. Pak de aarde positie op exact t (t.o.v. SSB)
+earth_pos_ssb = earth.at(t).position.au
+
+# 4. De geometrische vector (Sirius op t minus Aarde op t)
+geometric_vector = star_pos_ssb - earth_pos_ssb
+print(geometric_vector)
+# 2. Vraag de ster-positie op t ten opzichte van het barycenter
+# Dit berekent de eigenbeweging vanaf 1991.25 tot t
+
+# print(f"Datum: {t.utc_jpl()}")
+# print(f"RA:  {ra.degrees}")
+# print(f"Dec: {dec.degrees}")

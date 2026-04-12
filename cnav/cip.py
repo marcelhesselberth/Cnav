@@ -38,8 +38,8 @@ def Mcio(tjc, dX=0, dY=0):
     dX, dY: IERS corrections (interpolated from finals).
     
     """
-    X, Y = XYs(tjc)
-    X, Y = X + dX, Y_mod + dY  # IERS feedback
+    X, Y, s = XYs(tjc)
+    X, Y = X + dX, Y + dY  # IERS feedback
 
     M = np.empty((3,3))
     Z = np.sqrt(1 - X*X - Y*Y)
@@ -65,8 +65,8 @@ def Mcio_lp(tt_jd):
     M = np.array(
         [[1, 0, -X],
          [0, 1, -Y],
-         [X, Y, 1]], dtype=np.float)
-    return M
+         [X, Y, 1]], dtype=float)
+    return M 
 
 def ERA(UT1_jd2):  # Julian UT1 date since JD2000
     Tu_date, Tu_fraction = UT1_jd2

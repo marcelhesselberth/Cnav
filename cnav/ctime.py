@@ -118,7 +118,7 @@ class ATime:
         self.second = float(ss)
 
     def from_date_tuple(self, *args, **kwargs):
-        print("from_tuple", args, kwargs)
+        # print("from_tuple", args, kwargs)
         if "offset" in kwargs:
             self.tz = kwargs["tz"]
             print("TZ not implemeted yet")
